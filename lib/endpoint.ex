@@ -40,11 +40,18 @@ defmodule HTTPEventServer.Endpoint do
         result = with :http_event_server_error <- attempt_to_send_task(task, conn.body_params, conn.method),
                       :http_event_server_error <- attempt_to_send_task(task, conn.body_params, false),
                       do: error_response(task)
+
         send_event_response(result, conn, task)
     end
   end
 
   defp send_unless(%{state: :sent} = conn, _code, _message), do: conn
+
+  defp send_unless(conn, code, message) when is_binary(message) do
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(code, message)
+  end
 
   defp send_unless(conn, code, message) do
     conn
@@ -52,12 +59,13 @@ defmodule HTTPEventServer.Endpoint do
     |> send_resp(code, Poison.encode!(message))
   end
 
-
+  defp attempt_to_send_task(task, %{"_json" => data}, method), do: attempt_to_send_task(task, data, method)
   defp attempt_to_send_task(task, data, false) do
     try do
       Application.get_env(:http_event_server, :event_module).handle(task, data)
     rescue
       UndefinedFunctionError -> :http_event_server_error
+      FunctionClauseError -> :http_event_server_error
     end
   end
 
@@ -66,6 +74,7 @@ defmodule HTTPEventServer.Endpoint do
       Application.get_env(:http_event_server, :event_module).handle(task, data, String.upcase(method))
     rescue
       UndefinedFunctionError -> :http_event_server_error
+      FunctionClauseError -> :http_event_server_error
     end
   end
 
@@ -89,7 +98,7 @@ defmodule HTTPEventServer.Endpoint do
     if Application.get_env(:http_event_server, :fail_on_no_event_found) do
       {:http_event_server_error, "Event \"#{inspect event}\" not captured"}
     else
-      :ok
+      "Event '#{event}' not captured"
     end
   end
 end
