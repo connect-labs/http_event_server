@@ -29,20 +29,33 @@ defmodule HTTPEventServer.Endpoint do
   plug Plug.Parsers, parsers: [:json],
                      pass:  ["text/*"],
                      json_decoder: Poison
-
+  plug(:set_event_module)
   plug(:match)
   plug(:dispatch)
 
+  defp set_event_module(%{private: %{otp_app: otp_app}} = conn, _opts) do
+    conn
+    |> put_private(:event_module, Application.get_env(otp_app, :http_event_module))
+  end
+  defp set_event_module(conn, _opts), do: conn
+
+  match "/test/:task" do
+    run_tasks(conn, task)
+  end
+
   match "/:task" do
     case HTTPEventServer.Authorize.authorize(conn) do
-      %Plug.Conn{state: :sent} -> conn
-      conn ->
-        result = with :http_event_server_error <- attempt_to_send_task(task, conn.body_params, conn.method),
-                      :http_event_server_error <- attempt_to_send_task(task, conn.body_params, false),
-                      do: error_response(task)
-
-        send_event_response(result, conn, task)
+      %Plug.Conn{state: :sent} = conn -> conn
+      conn -> run_tasks(conn, task)
     end
+  end
+
+  match "" do
+    send_event_response({:error, error_response("nil")}, conn, "nil")
+  end
+
+  defp run_tasks(conn, task) do
+    send_event_response(attempt_to_send_task(conn.private, task, conn.body_params), conn, task)
   end
 
   defp send_unless(%{state: :sent} = conn, _code, _message), do: conn
@@ -59,23 +72,22 @@ defmodule HTTPEventServer.Endpoint do
     |> send_resp(code, Poison.encode!(message))
   end
 
-  defp attempt_to_send_task(task, %{"_json" => data}, method), do: attempt_to_send_task(task, data, method)
-  defp attempt_to_send_task(task, data, false) do
-    try do
-      Application.get_env(:http_event_server, :event_module).handle(task, data)
-    rescue
-      UndefinedFunctionError -> :http_event_server_error
-      FunctionClauseError -> :http_event_server_error
+
+  defp attempt_to_send_task(opts, task, %{"_json" => data}), do: attempt_to_send_task(opts, task, data)
+  defp attempt_to_send_task(%{event_module: event_module}, task, data) do
+    event_module.handle(task, data)
+  end
+
+  defp attempt_to_send_task(opts, task, data) do
+    IO.puts "OPTS? #{inspect opts}"
+    case Application.get_env(:http_event_server, :event_module) do
+      nil -> {:http_event_server_error, "No event module defined"}
+      module -> attempt_to_send_task(%{event_module: module}, task, data)
     end
   end
 
-  defp attempt_to_send_task(task, data, method) do
-    try do
-      Application.get_env(:http_event_server, :event_module).handle(task, data, String.upcase(method))
-    rescue
-      UndefinedFunctionError -> :http_event_server_error
-      FunctionClauseError -> :http_event_server_error
-    end
+  defp send_event_response(:not_defined, %{params: %{"task" => event}} = conn, _) do
+    send_unless(conn, 500, "Event '#{event}' not captured")
   end
 
   defp send_event_response({:error, resp}, conn, _) do
