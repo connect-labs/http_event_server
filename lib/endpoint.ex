@@ -89,7 +89,7 @@ defmodule HTTPEventServer.Endpoint do
   end
 
   defp send_event_response({:error, resp}, conn, _) do
-    send_unless(conn, 500, resp)
+    send_unless(conn, 400, resp)
   end
 
   defp send_event_response({:ok, resp}, conn, _) do
