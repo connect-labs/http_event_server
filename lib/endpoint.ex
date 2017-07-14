@@ -23,8 +23,6 @@ defmodule HTTPEventServer.Endpoint do
   use Plug.Router
   require Logger
 
-  plug(Plug.Logger)
-
 
   plug Plug.Parsers, parsers: [:json],
                      pass:  ["text/*"],
