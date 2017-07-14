@@ -42,7 +42,7 @@ defmodule HTTPEventServer.Authorize do
   end
 
   defp auth_error!(conn) do
-    Logger.debug "Invalid Token"
+    Logger.error "Invalid Token"
     conn
     |> put_status(:unauthorized)
     |> send_resp(401, Poison.encode!(%{error: "Invalid Token"}))

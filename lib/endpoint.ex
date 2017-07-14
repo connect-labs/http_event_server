@@ -55,6 +55,7 @@ defmodule HTTPEventServer.Endpoint do
   end
 
   defp run_tasks(conn, task) do
+    Logger.debug "Running event", [event: task]
     send_event_response(attempt_to_send_task(conn.private, task, conn.body_params), conn, task)
   end
 
@@ -79,7 +80,6 @@ defmodule HTTPEventServer.Endpoint do
   end
 
   defp attempt_to_send_task(opts, task, data) do
-    IO.puts "OPTS? #{inspect opts}"
     case Application.get_env(:http_event_server, :event_module) do
       nil -> {:http_event_server_error, "No event module defined"}
       module -> attempt_to_send_task(%{event_module: module}, task, data)
