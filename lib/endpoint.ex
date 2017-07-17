@@ -85,7 +85,7 @@ defmodule HTTPEventServer.Endpoint do
   end
 
   defp send_event_response(:not_defined, %{params: %{"task" => event}} = conn, _) do
-    send_unless(conn, 500, "Event '#{event}' not captured")
+    send_unless(conn, 400, "Event '#{event}' not captured")
   end
 
   defp send_event_response({:error, resp}, conn, _) do
@@ -97,7 +97,7 @@ defmodule HTTPEventServer.Endpoint do
   end
 
   defp send_event_response({:http_event_server_error, resp}, conn, task) do
-    send_unless(conn, 500, %{error: "Invalid return value from task", task: task, response: resp, method: conn.method})
+    send_unless(conn, 400, %{error: "Invalid return value from task", task: task, response: resp, method: conn.method})
   end
 
   defp send_event_response(resp, conn, _) do

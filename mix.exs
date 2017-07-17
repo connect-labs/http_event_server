@@ -7,7 +7,7 @@ defmodule HTTPEventServer.Mixfile do
      description: description(),
      package: package(),
      source_url: "https://github.com/humphreyja/http_event_server",
-     version: "0.2.3",
+     version: "0.2.4",
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
