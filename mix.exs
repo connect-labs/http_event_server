@@ -6,8 +6,8 @@ defmodule HTTPEventServer.Mixfile do
      name: "HTTP Event Server",
      description: description(),
      package: package(),
-     source_url: "https://github.com/humphreyja/http_event_server",
-     version: "0.2.4",
+     source_url: "https://github.com/connect-labs/http_event_server",
+     version: "0.2.5",
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -61,7 +61,9 @@ defmodule HTTPEventServer.Mixfile do
       files: ["lib", "mix.exs", "README*", "LICENSE*"],
       maintainers: ["Jake Humphrey"],
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/codelation/elixir-messenger"}
+      links: %{"GitHub" => "https://github.com/connect-labs/http_event_server"},
+      source_url: "https://github.com/connect-labs/http_event_server",
+      homepage_url: "https://github.com/connect-labs/http_event_server"
     ]
   end
 end
