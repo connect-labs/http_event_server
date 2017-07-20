@@ -11,6 +11,6 @@ The package can be installed by adding `http_event_client` to your list of depen
 
 ```elixir
 def deps do
-  [{:http_event_client, "~> 0.2.2"}]
+  [{:http_event_server, "~> 0.2.5"}]
 end
 ```
